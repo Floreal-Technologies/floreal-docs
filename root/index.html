@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Floréal Technologies — Manuals</title>
+<meta name="description" content="Manuals for Floréal Technologies products.">
+<style>
+:root {
+  --bg: #12110f; --ink: #f2ede4; --ink-dim: #c5bdb0; --rule: #33302b; --link: #d9b26a;
+}
+@media (prefers-color-scheme: light) {
+  :root { --bg: #faf7f1; --ink: #1c1a17; --ink-dim: #4b463e; --rule: #ddd6c9; --link: #8a5a1a; }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 4rem 1rem; background: var(--bg); color: var(--ink);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 42rem; margin: 0 auto; }
+h1 { margin: 0 0 .25rem; font-size: clamp(1.6rem, 1.3rem + 1.4vw, 2.2rem); letter-spacing: -.02em; }
+p.lede { margin: 0 0 2.5rem; color: var(--ink-dim); }
+ul { list-style: none; margin: 0; padding: 0; }
+li { padding: 1.25rem 0; border-top: 1px solid var(--rule); }
+h2 { margin: 0 0 .25rem; font-size: 1.15rem; }
+a { color: var(--link); }
+.langs { color: var(--ink-dim); font-size: .9rem; }
+footer { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--rule);
+         color: var(--ink-dim); font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Manuals</h1>
+  <p class="lede">Documentation for Floréal Technologies products.</p>
+  <ul>
+    <li>
+      <h2><a href="/mediacopy3000/">MediaCopy 3000</a></h2>
+      <p>Verified media offload between storage volumes, with ASC MHL manifests.</p>
+      <p class="langs"><a href="/mediacopy3000/">English</a> · <a href="/mediacopy3000/fr/">Français</a></p>
+    </li>
+  </ul>
+  <footer><a href="https://floreal.tech/">floreal.tech</a></footer>
+</main>
+</body>
+</html>

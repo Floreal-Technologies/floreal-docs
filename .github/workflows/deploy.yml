@@ -1,0 +1,141 @@
+name: Deploy docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      product:
+        description: Product to re-pin, by name
+        required: false
+      sha:
+        description: Commit of that product to pin
+        required: false
+  schedule:
+    # The safety net. If the dispatch token lapses, the site still follows main
+    # within a day instead of freezing without a signal.
+    - cron: '17 4 * * *'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# One deployment at a time. Queued runs wait instead of cancelling, so the last
+# push always reaches the live site.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Pin the product this dispatch names
+        if: github.event_name == 'workflow_dispatch' && inputs.product != ''
+        env:
+          PRODUCT: ${{ inputs.product }}
+          SHA: ${{ inputs.sha }}
+        run: scripts/bump.sh --product "$PRODUCT" --sha "$SHA"
+
+      - name: Pin every product to its main
+        if: github.event_name == 'schedule'
+        run: scripts/bump.sh --all
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - id: commit
+        name: Commit the manifest when it moved
+        run: |
+          if git diff --quiet -- products.json; then
+            echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add products.json
+          git commit -m "docs: re-pin products"
+          git push
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  plan:
+    needs: bump
+    runs-on: ubuntu-latest
+    outputs:
+      products: ${{ steps.plan.outputs.products }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.bump.outputs.sha }}
+      - id: plan
+        run: |
+          products="$(scripts/plan.sh)"
+          echo "products=$products" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: plan
+    runs-on: ubuntu-latest
+    strategy:
+      # Every product is built and reported. The gate is assemble's needs.
+      fail-fast: false
+      matrix:
+        product: ${{ fromJSON(needs.plan.outputs.products) }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ matrix.product.repo }}
+          ref: ${{ matrix.product.ref }}
+          fetch-depth: 0
+          sparse-checkout: |
+            manual
+            package.json
+            package-lock.json
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run docs:build
+        env:
+          DOCS_BASE: /${{ matrix.product.name }}/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manual-${{ matrix.product.name }}
+          path: manual/.vitepress/dist
+          if-no-files-found: error
+
+  assemble:
+    # Fail closed. Any failed build skips this job and the deployment, so Pages
+    # keeps serving the last good version of every manual.
+    needs: [bump, plan, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.bump.outputs.sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: manual-*
+          path: artifacts
+      - run: scripts/assemble.sh --artifacts artifacts --root root --out site --manifest products.json
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: assemble
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

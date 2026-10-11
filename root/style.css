@@ -1,23 +1,38 @@
 :root {
-  --bg: #ffffff;
-  --ink: #f2ede4;
-  --ink-dim: #c5bdb0;
-  --rule: #33302b;
-  --link: #d9b26a;
+  color-scheme: light dark;
+  --window-bg-color: #fafafb;
+  --window-fg-color: rgb(0 0 6 / 80%);
+  --accent-bg-color: #3584e4;
+  --accent-fg-color: #ffffff;
+  --accent-color: #0461be;
+  --accent-color: oklab(from var(--accent-bg-color) min(l, 0.5) a b);
+  --dim-opacity: 55%;
+  --border-opacity: 15%;
+
+  --bg: var(--window-bg-color);
+  --ink: var(--window-fg-color);
+  --ink-dim: color-mix(in srgb, var(--window-fg-color) var(--dim-opacity), transparent);
+  --rule: color-mix(in srgb, currentColor var(--border-opacity), transparent);
+  --link: var(--accent-color);
 }
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    --bg: #faf7f1;
-    --ink: #1c1a17;
-    --ink-dim: #4b463e;
-    --rule: #ddd6c9;
-    --link: #8a5a1a;
+    --window-bg-color: #303446;
+    --window-fg-color: #c6d0f5;
+    --accent-bg-color: #8caaee;
+    --accent-fg-color: #232634;
+    --accent-color: #8caaee;
   }
 }
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background: var(--accent-bg-color);
+  color: var(--accent-fg-color);
 }
 
 body {
